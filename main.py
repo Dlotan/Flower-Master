@@ -1,6 +1,6 @@
 from bluepy.bluepy.btle import *
 import struct
-
+import sqlite3
 
 def to_flower_uuid(hex_value):
     return UUID("%08X-84a8-11e2-afba-0002a5d5c51b" % (0x39e10000 + hex_value))
@@ -90,6 +90,18 @@ class TemperatureCharacteristic(FlowerCharacteristic):
             return struct.unpack("f", self.characteristic.read())[0]
 
 
+class WaterCharacteristic(FlowerCharacteristic):
+    name = "Water"
+    uuid = to_flower_uuid(0xfa09)
+
+    def __init__(self):
+        super(WaterCharacteristic, self).__init__()
+
+    def read(self):
+        if self.characteristic:
+            return struct.unpack("f", self.characteristic.read())[0]
+
+
 class PeriodCharacteristic(FlowerCharacteristic):
     name = "Period"
     uuid = to_flower_uuid(0xfa06)
@@ -116,6 +128,7 @@ class LiveService(FlowerService):
             LEDCharacteristic(),
             LightCharacteristic(),
             TemperatureCharacteristic(),
+            WaterCharacteristic(),
             PeriodCharacteristic(),
         ]
 
@@ -165,9 +178,10 @@ class FlowerPeripheral(Peripheral):
     def print_all_connections(self):
         for service in self.getServices():
             print("-------")
-            print(str(service.uuid))
+            print(str(service.uuid) + " " + str(service))
             for characteristic in service.getCharacteristics():
-                print("    " + str(characteristic.uuid))
+                print("    " + str(characteristic.uuid) + " " + str(characteristic)
+                      + " Handle " + str(characteristic.getHandle()))
 
     def make_all_connections(self):
         for service in self.getServices():
@@ -182,6 +196,18 @@ class FlowerPeripheral(Peripheral):
         Peripheral.connect(self, self.dev_addr, self.addr_type)
 
 
+def insert_into_db(light, temperature, water, battery):
+    dbconn = sqlite3.connect("test.db")
+    try:
+        c = dbconn.cursor()
+        c.execute("CREATE Table IF NOT EXISTS flower_data (timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, light real, "
+                  "temperature real, water real, battery real)")
+        c.execute("INSERT INTO flower_data (light, temperature, water, battery) VALUES (?,?,?,?)",
+                  (light, temperature, water, battery))
+        dbconn.commit()
+    finally:
+        dbconn.close()
+
 if __name__ == '__main__':
     if not os.path.isfile(helperExe):
         raise ImportError("Cannot find required executable '%s'" % helperExe)
@@ -195,18 +221,25 @@ if __name__ == '__main__':
     try:
         conn.make_all_connections()  # Have to make all connections at start otherwise the Battery can't connect
         conn.enable()
-
-        conn.flower_services["Live"]["Period"].write(1)
-        for i in range(10):
-            print("Light " + str(conn.flower_services["Live"]["Light"].read()))
-            print("Temperature " + str(conn.flower_services["Live"]["Temperature"].read()))
-            time.sleep(1)
-        conn.flower_services["Live"]["Period"].write(0)
     finally:
         conn.disconnect()
     print("Reconnect")
     try:
         conn.flower_connect()
-        print conn.flower_services["Battery"]["Battery"].read()
+        conn.flower_services["Live"]["Period"].write(1)
+        light = []
+        temperature = []
+        water = []
+        for i in range(6):
+            light.append(conn.flower_services["Live"]["Light"].read())
+            temperature.append(conn.flower_services["Live"]["Temperature"].read())
+            water.append(conn.flower_services["Live"]["Water"].read())
+            print "Reading"
+            time.sleep(0.5)
+        conn.flower_services["Live"]["Period"].write(0)
+        for meassure in (light, temperature, water):
+            meassure.sort()
+        insert_into_db(light[len(light)/2], temperature[len(temperature)/2], water[len(water)/2],
+                       conn.flower_services["Battery"]["Battery"].read())
     finally:
         conn.disconnect()
