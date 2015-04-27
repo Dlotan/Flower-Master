@@ -19,7 +19,7 @@ def insert_into_db(light, temperature, water, battery):
 
 pool = ThreadPool(processes=1)
 print "Get flower data"
-flower_result = pool.apply_async(flower_power.get_flower_data, ['A0:14:3D:08:B4:90'])
-result = flower_result.get()
-for name in result:
-    print name + " : " + str(result[name])
+flower_async_result = pool.apply_async(flower_power.get_flower_data, ['A0:14:3D:08:B4:90'])
+flower_result = flower_async_result.get()
+for name in flower_result:
+    print name + " : " + str(flower_result[name])

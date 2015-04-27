@@ -1,6 +1,5 @@
 from bluepy.bluepy.btle import *
 import struct
-import sqlite3
 
 
 def to_flower_uuid(hex_value):
@@ -268,7 +267,6 @@ class FlowerPeripheral(Peripheral):
         for i in range(5):
             for attribute in attributes:
                 attributes[attribute].append(self.flower_services["Live"][attribute].read())
-            print "Reading"
             time.sleep(1)
         self.flower_services["Live"]["Period"].write(0)
         # Get Median
@@ -278,12 +276,20 @@ class FlowerPeripheral(Peripheral):
         return attributes
 
 
+mac_to_connection = {}
+
+
 def get_flower_data(flower_mac_address):
-    conn = FlowerPeripheral(flower_mac_address)
-    try:
-        conn.enable()
-    finally:
-        conn.disconnect()
+    # Caching by MacAddress to reduce connection time.
+    if flower_mac_address in mac_to_connection:
+        conn = mac_to_connection[flower_mac_address]
+    else:
+        conn = FlowerPeripheral(flower_mac_address)
+        mac_to_connection[flower_mac_address] = conn
+        try:
+            conn.enable()
+        finally:
+            conn.disconnect()
     try:
         conn.flower_connect()
         data = conn.get_data()
