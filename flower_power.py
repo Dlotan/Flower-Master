@@ -310,6 +310,6 @@ if __name__ == '__main__':
     print("Reconnect")
     try:
         conn.flower_connect()
-        print conn.get_data()
+        print(conn.get_data())
     finally:
         conn.disconnect()
