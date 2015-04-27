@@ -103,6 +103,54 @@ class WaterCharacteristic(FlowerCharacteristic):
             return struct.unpack("f", self.characteristic.read())[0]
 
 
+class DLICharacteristic(FlowerCharacteristic):
+    name = "DLI"
+    uuid = to_flower_uuid(0xfa0b)
+
+    def __init__(self):
+        super(DLICharacteristic, self).__init__()
+
+    def read(self):
+        if self.characteristic:
+            return struct.unpack("f", self.characteristic.read())[0]
+
+
+class EaCharacteristic(FlowerCharacteristic):
+    name = "Ea"
+    uuid = to_flower_uuid(0xfa0c)
+
+    def __init__(self):
+        super(EaCharacteristic, self).__init__()
+
+    def read(self):
+        if self.characteristic:
+            return struct.unpack("f", self.characteristic.read())[0]
+
+
+class EcbCharacteristic(FlowerCharacteristic):
+    name = "Ecb"
+    uuid = to_flower_uuid(0xfa0d)
+
+    def __init__(self):
+        super(EcbCharacteristic, self).__init__()
+
+    def read(self):
+        if self.characteristic:
+            return struct.unpack("f", self.characteristic.read())[0]
+
+
+class EcPorusCharacteristic(FlowerCharacteristic):
+    name = "EcPorus"
+    uuid = to_flower_uuid(0xfa0e)
+
+    def __init__(self):
+        super(EcPorusCharacteristic, self).__init__()
+
+    def read(self):
+        if self.characteristic:
+            return struct.unpack("f", self.characteristic.read())[0]
+
+
 class PeriodCharacteristic(FlowerCharacteristic):
     name = "Period"
     uuid = to_flower_uuid(0xfa06)
@@ -131,6 +179,10 @@ class LiveService(FlowerService):
             TemperatureCharacteristic(),
             WaterCharacteristic(),
             PeriodCharacteristic(),
+            DLICharacteristic(),
+            EaCharacteristic(),
+            EcbCharacteristic(),
+            EcPorusCharacteristic()
         ]
 
 
@@ -175,6 +227,7 @@ class FlowerPeripheral(Peripheral):
         }
         self.dev_addr = dev_addr
         self.addr_type = addr_type
+        self.setDelegate(FlowerDelegate())
 
     def print_all_connections(self):
         for service in self.getServices():
@@ -184,17 +237,44 @@ class FlowerPeripheral(Peripheral):
                 print("    " + str(characteristic.uuid) + " " + str(characteristic)
                       + " Handle " + str(characteristic.getHandle()))
 
-    def make_all_connections(self):
+    def _make_all_connections(self):
         for service in self.getServices():
             for _ in service.getCharacteristics():
                 pass
 
     def enable(self):
+        self._make_all_connections() # Have to make all connections at start otherwise the Battery can't connect
         for service in self.flower_services:
             self.flower_services[service].enable(self)
 
     def flower_connect(self):
         Peripheral.connect(self, self.dev_addr, self.addr_type)
+
+    def getData(self):
+        attributes = {
+            "Light": []
+            "Temperature": []
+            "Water": []
+            "DLI": []
+            "Ea": []
+            "Ecb": []
+            "EcPorus": []
+        }
+        self.flower_services["Live"]["Period"].write(1)
+        light = []
+        temperature = []
+        water = []
+        for i in range(7):
+            for attribute in attributes:
+                attributes[attribute].append(self.flower_services["Live"][attribute].read())
+            print "Reading"
+            time.sleep(1)
+        self.flower_services["Live"]["Period"].write(0)
+        # Get Median
+        for attribute in attributes:
+            attributes[attribute] = attributes[attribute][len(attributes[attribute]) / 2] 
+        attributes["Battery"] = self.flower_services["Battery"]["Battery"].read()
+        return attributes
 
 
 def insert_into_db(light, temperature, water, battery):
@@ -218,30 +298,14 @@ if __name__ == '__main__':
     flower_addr_type = ADDR_TYPE_PUBLIC
     print("Connecting to: {}, address type: {}".format(flower_dev_addr, flower_addr_type))
     conn = FlowerPeripheral(flower_dev_addr, flower_addr_type)
-    print("Connection established")
-    conn.setDelegate(FlowerDelegate())
-    try:
-        conn.make_all_connections()  # Have to make all connections at start otherwise the Battery can't connect
+    try: attributes[attribute]
         conn.enable()
     finally:
         conn.disconnect()
+    print("Connection Configured")
     print("Reconnect")
     try:
         conn.flower_connect()
-        conn.flower_services["Live"]["Period"].write(1)
-        light = []
-        temperature = []
-        water = []
-        for i in range(6):
-            light.append(conn.flower_services["Live"]["Light"].read())
-            temperature.append(conn.flower_services["Live"]["Temperature"].read())
-            water.append(conn.flower_services["Live"]["Water"].read())
-            print "Reading"
-            time.sleep(0.5)
-        conn.flower_services["Live"]["Period"].write(0)
-        for meassure in (light, temperature, water):
-            meassure.sort()
-        insert_into_db(light[len(light)/2], temperature[len(temperature)/2], water[len(water)/2],
-                       conn.flower_services["Battery"]["Battery"].read())
+        print conn.getData()
     finally:
         conn.disconnect()
