@@ -2,6 +2,7 @@ from bluepy.bluepy.btle import *
 import struct
 import sqlite3
 
+
 def to_flower_uuid(hex_value):
     return UUID("%08X-84a8-11e2-afba-0002a5d5c51b" % (0x39e10000 + hex_value))
 
@@ -205,6 +206,7 @@ def insert_into_db(light, temperature, water, battery):
         c.execute("INSERT INTO flower_data (light, temperature, water, battery) VALUES (?,?,?,?)",
                   (light, temperature, water, battery))
         dbconn.commit()
+        print("Database written")
     finally:
         dbconn.close()
 
