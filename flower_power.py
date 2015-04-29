@@ -1,5 +1,6 @@
-from bluepy.bluepy.btle import *
 import struct
+
+from app.third_party.bluepy.bluepy.btle import *
 
 
 def to_flower_uuid(hex_value):
@@ -266,7 +267,7 @@ class FlowerPeripheral(Peripheral):
         self.flower_services["Live"]["Period"].write(1)
         for i in range(5):
             for attribute in attributes:
-                attributes[attribute].append(self.flower_services["Live"][attribute].read())
+                attributes[attribute].append(abs(self.flower_services["Live"][attribute].read()))
             time.sleep(1)
         self.flower_services["Live"]["Period"].write(0)
         # Get Median

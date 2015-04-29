@@ -21,7 +21,7 @@ class FlowerDevice(db.Model):
 
 class FlowerData(db.Model):
     id = Column(Integer, primary_key=True)
-    timestamp = Column(DATETIME, unique=False, default=datetime.now())
+    timestamp = Column(DATETIME, unique=False, default=datetime.now)
     temperature = Column(REAL, unique=False)
     light = Column(Integer, unique=False)
     water = Column(REAL, unique=False)
