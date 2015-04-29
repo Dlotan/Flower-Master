@@ -1,6 +1,6 @@
 import struct
 
-from app.third_party.bluepy.bluepy.btle import *
+from third_party.bluepy.bluepy.btle import *
 
 
 def to_flower_uuid(hex_value):
@@ -302,15 +302,15 @@ if __name__ == '__main__':
     flower_dev_addr = 'A0:14:3D:08:B4:90'
     flower_addr_type = ADDR_TYPE_PUBLIC
     print("Connecting to: {}, address type: {}".format(flower_dev_addr, flower_addr_type))
-    conn = FlowerPeripheral(flower_dev_addr, flower_addr_type)
+    connection = FlowerPeripheral(flower_dev_addr, flower_addr_type)
     try:
-        conn.enable()
+        connection.enable()
     finally:
-        conn.disconnect()
+        connection.disconnect()
     print("Connection Configured")
     print("Reconnect")
     try:
-        conn.flower_connect()
-        print(conn.get_data())
+        connection.flower_connect()
+        print(connection.get_data())
     finally:
-        conn.disconnect()
+        connection.disconnect()

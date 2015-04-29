@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% set active_page = "index" %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='display/index.css') }}">
+{% endblock %}
+
+{% block page_content %}
+<div class="index-content">
+    <h1>Index</h1>
+    <p class="lead">Use this document as a way to quickly start any new project.<br> All you get is this text and a mostly barebones HTML document.</p>
+  </div>
+{% endblock %}

@@ -1,0 +1,112 @@
+from datetime import datetime, timedelta
+from sqlalchemy.ext.hybrid import hybrid_property
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask.ext.login import UserMixin
+from . import db, login_manager
+
+
+class Users(UserMixin, db.Model):
+    __tablaname__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64),
+                         nullable=False, unique=True, index=True)
+    password_hash = db.Column(db.String(128))
+
+    @property
+    def password(self):
+        raise AttributeError('password is not a readable attribute')
+
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def verify_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Users.query.get(int(user_id))
+
+
+""" Everything grow related """
+
+
+class GrowSessions(db.Model):
+    __tablename__ = 'grow_sessions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    start_date = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    days_grow_stage = db.Column(db.Integer)
+
+    grow_stage_night_hours = db.Column(db.Integer, default=12)
+    flower_stage_night_hours = db.Column(db.Integer, default=6)
+
+    brand = db.Column(db.Text)
+    num_plants = db.Column(db.Integer)
+    square_centimeters = db.Column(db.Integer)
+    gram_yield = db.Column(db.Integer)
+    end_date = db.Column(db.DateTime)
+
+    @hybrid_property
+    def is_active(self):
+        return self.end_date is not None
+
+    @hybrid_property
+    def is_flower_stage(self):
+        flower_start = self.start_date + timedelta(self.days_grow_stage)
+        return datetime.utcnow() < flower_start
+
+    @hybrid_property
+    def is_grow_stage(self):
+        flower_start = self.start_date + timedelta(self.days_grow_stage)
+        return datetime.utcnow() >= flower_start
+
+
+class FlowerDevices(db.Model):
+    __tablename__ = 'flower_devices'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.Text)
+    mac = db.Column(db.Text)
+    is_active = db.Column(db.Integer, index=True, default=True)
+    grow_session_id = db.Column(db.Integer, db.ForeignKey('grow_sessions.id'))
+
+    @staticmethod
+    def get_active():
+        return FlowerDevices.query.filter_by(is_active=True).all()
+
+
+class FlowerData(db.Model):
+    __tablename__ = 'flower_data'
+
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    temperature = db.Column(db.REAL)
+    light = db.Column(db.Integer)
+    water = db.Column(db.REAL)
+    battery = db.Column(db.Integer)
+    ecb = db.Column(db.REAL)
+    ec_porus = db.Column(db.REAL)
+    dli = db.Column(db.REAL)
+    ea = db.Column(db.REAL)
+
+    flower_device_id = db.Column(db.Integer, db.ForeignKey('flower_devices.id'))
+
+    @staticmethod
+    def new_flower_data(data, flower_device_id):
+        flower_data = FlowerData(
+            temperature=data['Temperature'],
+            light=data['Light'],
+            water=data['Water'],
+            battery=data['Battery'],
+            ecb=data['Ecb'],
+            ec_porus=data['EcPorus'],
+            dli=data['DLI'],
+            ea=data['Ea'],
+            flower_device_id=flower_device_id,
+        )
+
+        db.session.add(flower_data)
+        db.session.commit()

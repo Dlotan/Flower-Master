@@ -1,0 +1,63 @@
+{% extends "bootstrap/base.html" %}
+
+{% block title %}Flower Master{% endblock %}
+
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+{% endblock %}
+
+{% set navigation_bar = [
+    (url_for('display.index'), 'index', 'Index'),
+    (url_for('manage.index'), 'manage', 'Manage'),
+    ('/about/', 'about', 'About')
+] -%}
+{% set active_page = active_page|default('index') -%}
+
+{% block navbar %}
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="{{ url_for('display.index') }}">Flower Master</a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+            <ul class="nav navbar-nav">
+                {% for href, id, caption in navigation_bar %}
+                    <li{% if id == active_page %} class="active"{% endif %}>
+                        <a href="{{ href|e }}">{{ caption|e }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div><!--/.nav-collapse -->
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% for message in get_flashed_messages() %}
+    <div class="alert alert-warning">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        {{ message }}
+    </div>
+    {% endfor %}
+
+    {% block page_content %}{% endblock %}
+    <hr>
+    <footer>
+        <p>&copy; Dlotan 2015</p>
+    </footer>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{{ moment.include_moment() }}
+{% endblock %}
