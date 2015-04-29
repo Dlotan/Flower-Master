@@ -10,10 +10,9 @@
 
 {% set navigation_bar = [
     (url_for('display.index'), 'index', 'Index'),
-    (url_for('manage.index'), 'manage', 'Manage'),
-    ('/about/', 'about', 'About')
+    ('/display/status', 'status', 'Status'),
 ] -%}
-{% set active_page = active_page|default('index') -%}
+{% set active_page = active_page|default('') -%}
 
 {% block navbar %}
 <nav class="navbar navbar-inverse navbar-fixed-top">
@@ -34,6 +33,24 @@
                         <a href="{{ href|e }}">{{ caption|e }}</a>
                     </li>
                 {% endfor %}
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Manage<span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="#">Light</a></li>
+                        <li><a href="#">Water</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#">Grow Sessions</a></li>
+                        <li><a href="#">Flower Devices</a></li>
+                        <li><a href="#">Users</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                {% if not current_user.is_authenticated() %}
+                    <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('auth.logout') }}">Logout</a></li>
+                {% endif %}
             </ul>
         </div><!--/.nav-collapse -->
     </div>

@@ -33,28 +33,30 @@ def adduser(username):
 
 
 @manager.command
-def addtestdata():
-    """ Add test data for dev mode. """
+def maketestdata():
+    """ Make test data for dev mode. """
+    db.drop_all()
     db.create_all()
     from app.models import GrowSessions
-    from datetime import datetime
-    session = GrowSessions(start_date=datetime.utcnow())
+    from datetime import datetime, timedelta
+    session = GrowSessions(name='test_session',
+                           start_date=datetime.utcnow())
     db.session.add(session)
     db.session.commit()
     from app.models import FlowerDevices
-    device_a = FlowerDevices(name='a', mac='amac', grow_session_id=session.id)
+    device_a = FlowerDevices(name='flower_device_a', mac='amac', grow_session_id=session.id)
     db.session.add(device_a)
-    device_b = FlowerDevices(name='b', mac='bmac', grow_session_id=session.id)
+    device_b = FlowerDevices(name='flower_device_b', mac='bmac', grow_session_id=session.id)
     db.session.add(device_b)
     db.session.commit()
-    for _ in range(50):
+    for i in range(50):
         from app.models import FlowerData
         datapoint = FlowerData(
-            timestamp=datetime.utcnow(),
-            temperature=10.23,
+            timestamp=datetime.utcnow()-timedelta(i),
+            temperature=10.23 + i*0.1,
             light=100,
-            water=40.5,
-            battery=90,
+            water=40.5 - i*0.5,
+            battery=90 - i,
             ecb=0.5,
             ec_porus=0.6,
             dli=0.7,
@@ -62,8 +64,10 @@ def addtestdata():
             flower_device_id=device_a.id,
         )
         db.session.add(datapoint)
+    user = Users(username='Dlotan', password='dlotan')
+    db.session.add(user)
     db.session.commit()
-    print('Fake data added')
+    print('Fake data made')
 
 
 @manager.command

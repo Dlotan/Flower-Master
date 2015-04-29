@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% set active_page = "status" %}
+
+{% block head %}
+{{ super() }}
+{% endblock %}
+
+{% block page_content %}
+<div class="index-content">
+    <h1>Status</h1>
+    {% for grow_session in grow_sessions %}
+        <hr>
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <td><h3>{{ grow_session.name }}</h3></td>
+                </tr>
+                <tr>
+                    <td>Start Date</td>
+                    <td>{{ grow_session.start_date }} : {{ moment(grow_session.start_date).fromNow() }}</td>
+                </tr>
+                {% for flower_device in grow_session.flower_devices %}
+                    <tr>
+                        <td></td>
+                        <td>
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <td><h4>{{ flower_device.name }}</h4></td>
+                                    </tr>
+                                        {% if flower_device.flower_data|length > 0 %}
+                                            </tr>
+                                            <td>
+                                                <table class="table table-bordered">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td>
+                                                                Age
+                                                            </td>
+                                                            <td>
+                                                                {{ moment(flower_device.flower_data[0].timestamp).fromNow() }}
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Temparature
+                                                            </td>
+                                                            <td>
+                                                                {{ flower_device.flower_data[0].temperature }}
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Light
+                                                            </td>
+                                                            <td>
+                                                                {{ flower_device.flower_data[0].light }}
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Water
+                                                            </td>
+                                                            <td>
+                                                                {{ flower_device.flower_data[0].water }}
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Battery
+                                                            </td>
+                                                            <td>
+                                                                {{ flower_device.flower_data[0].battery }}
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Ecb
+                                                            </td>
+                                                            <td>
+                                                                {{ flower_device.flower_data[0].ecb }}
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Ec Porus
+                                                            </td>
+                                                            <td>
+                                                                {{ flower_device.flower_data[0].ec_porus }}
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                DLI
+                                                            </td>
+                                                            <td>
+                                                                {{ flower_device.flower_data[0].dli }}
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                Ea
+                                                            </td>
+                                                            <td>
+                                                                {{ flower_device.flower_data[0].ea }}
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                            <tr>
+                                        {% endif %}
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+  </div>
+{% endblock %}

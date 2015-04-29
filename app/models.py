@@ -40,18 +40,21 @@ class GrowSessions(db.Model):
     start_date = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     days_grow_stage = db.Column(db.Integer)
 
-    grow_stage_night_hours = db.Column(db.Integer, default=12)
-    flower_stage_night_hours = db.Column(db.Integer, default=6)
+    grow_stage_light_hours = db.Column(db.Integer, default=12)
+    flower_stage_light_hours = db.Column(db.Integer, default=18)
 
+    name = db.Column(db.Text)
     brand = db.Column(db.Text)
     num_plants = db.Column(db.Integer)
     square_centimeters = db.Column(db.Integer)
     gram_yield = db.Column(db.Integer)
     end_date = db.Column(db.DateTime)
 
+    flower_devices = db.relationship('FlowerDevices', back_populates='grow_session')
+
     @hybrid_property
     def is_active(self):
-        return self.end_date is not None
+        return self.end_date is None
 
     @hybrid_property
     def is_flower_stage(self):
@@ -63,6 +66,10 @@ class GrowSessions(db.Model):
         flower_start = self.start_date + timedelta(self.days_grow_stage)
         return datetime.utcnow() >= flower_start
 
+    @staticmethod
+    def get_active_sessions():
+        return GrowSessions.query.filter_by(end_date=None)
+
 
 class FlowerDevices(db.Model):
     __tablename__ = 'flower_devices'
@@ -72,6 +79,11 @@ class FlowerDevices(db.Model):
     mac = db.Column(db.Text)
     is_active = db.Column(db.Integer, index=True, default=True)
     grow_session_id = db.Column(db.Integer, db.ForeignKey('grow_sessions.id'))
+
+    grow_session = db.relationship('GrowSessions', back_populates='flower_devices')
+    flower_data = db.relationship('FlowerData',
+                                  back_populates='flower_device',
+                                  order_by='desc(FlowerData.timestamp)')
 
     @staticmethod
     def get_active():
@@ -93,6 +105,8 @@ class FlowerData(db.Model):
     ea = db.Column(db.REAL)
 
     flower_device_id = db.Column(db.Integer, db.ForeignKey('flower_devices.id'))
+    flower_device = db.relationship('FlowerDevices', back_populates='flower_data')
+
 
     @staticmethod
     def new_flower_data(data, flower_device_id):
