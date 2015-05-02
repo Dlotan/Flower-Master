@@ -1,7 +1,8 @@
-from flask import render_template
+from flask import render_template, Blueprint
 from flask.ext.login import login_required
-from . import manage
 
+
+manage = Blueprint('manage', __name__)
 
 
 @manage.route('/')

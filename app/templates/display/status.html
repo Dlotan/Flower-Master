@@ -17,7 +17,11 @@
                 </tr>
                 <tr>
                     <td>Start Date</td>
-                    <td>{{ grow_session.start_date }} : {{ moment(grow_session.start_date).fromNow() }}</td>
+                    <td>{{ moment(grow_session.start_date).format('LLLL') }} : {{ moment(grow_session.start_date).fromNow() }}</td>
+                </tr>
+                <tr>
+                    <td>Start Flower</td>
+                    <td>{{ moment(grow_session.flower_start_date).format('LLLL') }} : {{ moment(grow_session.flower_start_date).fromNow() }}</td>
                 </tr>
                 {% for flower_device in grow_session.flower_devices %}
                     <tr>
@@ -35,10 +39,10 @@
                                                     <tbody>
                                                         <tr>
                                                             <td>
-                                                                Age
+                                                                Data Age
                                                             </td>
                                                             <td>
-                                                                {{ moment(flower_device.flower_data[0].timestamp).fromNow() }}
+                                                                {{ moment(flower_device.flower_data[0].timestamp).fromNow(refresh=True) }}
                                                             </td>
                                                         </tr>
                                                         <tr>

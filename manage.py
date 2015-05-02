@@ -7,13 +7,14 @@ if os.path.exists('.env'):
         if len(var) == 2:
             os.environ[var[0]] = var[1]
 
-from app import create_app
 from flask.ext.script import Manager
-from app import db
+from app.factory import create_app, db
 from app.models import Users
+
 
 app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 manager = Manager(app)
+
 
 @manager.command
 def adduser(username):
@@ -33,14 +34,16 @@ def adduser(username):
 
 
 @manager.command
-def maketestdata():
+def reset():
     """ Make test data for dev mode. """
+
     db.drop_all()
     db.create_all()
     from app.models import GrowSessions
     from datetime import datetime, timedelta
     session = GrowSessions(name='test_session',
-                           start_date=datetime.utcnow())
+                           start_date=datetime.utcnow(),
+                           days_grow_stage=20)
     db.session.add(session)
     db.session.commit()
     from app.models import FlowerDevices
@@ -74,6 +77,8 @@ def maketestdata():
 def dropall():
     """ Delete whole database. """
     db.drop_all()
+
+
 
 if __name__ == '__main__':
     manager.run()

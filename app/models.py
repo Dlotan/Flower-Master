@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.ext.hybrid import hybrid_property
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask.ext.login import UserMixin
-from . import db, login_manager
+from .factory import db, login_manager
 
 
 class Users(UserMixin, db.Model):
@@ -29,6 +29,28 @@ class Users(UserMixin, db.Model):
 def load_user(user_id):
     return Users.query.get(int(user_id))
 
+""" Event stuff """
+
+
+class Events(db.Model):
+    __tablename__ = 'events'
+
+    id = db.Column(db.Integer, primary_key=True)
+    time = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    name = db.Column(db.Text)
+    type = db.Column(db.Text)
+    args = db.Column(db.Text)
+
+
+class EventLog(db.Model):
+    __tablename__ = 'event_log'
+
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    name = db.Column(db.Text)
+    type = db.Column(db.Text)
+    args = db.Column(db.Text)
+    comment = db.Column(db.Text)
 
 """ Everything grow related """
 
@@ -40,8 +62,10 @@ class GrowSessions(db.Model):
     start_date = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     days_grow_stage = db.Column(db.Integer)
 
-    grow_stage_light_hours = db.Column(db.Integer, default=12)
-    flower_stage_light_hours = db.Column(db.Integer, default=18)
+    grow_stage_day_hours = db.Column(db.Integer, default=12)
+    grow_stage_night_hours = db.Column(db.Integer, default=12)
+    flower_stage_day_hours = db.Column(db.Integer, default=18)
+    flower_stage_night_hours = db.Column(db.Integer, default=6)
 
     name = db.Column(db.Text)
     brand = db.Column(db.Text)
@@ -50,11 +74,19 @@ class GrowSessions(db.Model):
     gram_yield = db.Column(db.Integer)
     end_date = db.Column(db.DateTime)
 
+    light_devices = db.relationship('LightDevices', back_populates='grow_session')
+    watering_devices = db.relationship('WateringDevices', back_populates='grow_session')
     flower_devices = db.relationship('FlowerDevices', back_populates='grow_session')
+
+    flower_data = db.relationship('FlowerData', back_populates='grow_session')
 
     @hybrid_property
     def is_active(self):
         return self.end_date is None
+
+    @hybrid_property
+    def flower_start_date(self):
+        return self.start_date + timedelta(self.days_grow_stage)
 
     @hybrid_property
     def is_flower_stage(self):
@@ -71,15 +103,35 @@ class GrowSessions(db.Model):
         return GrowSessions.query.filter_by(end_date=None)
 
 
+class LightDevices(db.Model):
+    __tablename__ = 'light_devices'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.Text)
+
+    grow_session_id = db.Column(db.Integer, db.ForeignKey('grow_sessions.id'))
+    grow_session = db.relationship('GrowSessions', back_populates='light_devices')
+
+
+class WateringDevices(db.Model):
+    __tablename__ = 'watering_devices'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.Text)
+
+    grow_session_id = db.Column(db.Integer, db.ForeignKey('grow_sessions.id'))
+    grow_session = db.relationship('GrowSessions', back_populates='watering_devices')
+
+
 class FlowerDevices(db.Model):
     __tablename__ = 'flower_devices'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.Text)
     mac = db.Column(db.Text)
-    is_active = db.Column(db.Integer, index=True, default=True)
-    grow_session_id = db.Column(db.Integer, db.ForeignKey('grow_sessions.id'))
+    is_active = db.Column(db.Boolean, index=True, default=True)
 
+    grow_session_id = db.Column(db.Integer, db.ForeignKey('grow_sessions.id'))
     grow_session = db.relationship('GrowSessions', back_populates='flower_devices')
     flower_data = db.relationship('FlowerData',
                                   back_populates='flower_device',
@@ -106,6 +158,9 @@ class FlowerData(db.Model):
 
     flower_device_id = db.Column(db.Integer, db.ForeignKey('flower_devices.id'))
     flower_device = db.relationship('FlowerDevices', back_populates='flower_data')
+
+    grow_session_id = db.Column(db.Integer, db.ForeignKey('grow_sessions.id'))
+    grow_session = db.relationship('GrowSessions', back_populates='flower_data')
 
 
     @staticmethod

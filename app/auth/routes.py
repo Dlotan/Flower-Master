@@ -1,8 +1,10 @@
-from flask import flash, redirect, url_for, request, render_template
+from flask import flash, redirect, url_for, request, render_template, Blueprint
 from flask.ext.login import logout_user, login_user, login_required
 from ..models import Users
-from . import auth
 from .forms import LoginForm
+
+
+auth = Blueprint('auth', __name__)
 
 
 @auth.route('/login', methods=['GET', 'POST'])
@@ -14,7 +16,7 @@ def login():
             flash('Invalid email or password.')
             return redirect(url_for('.login'))
         login_user(user, form.remember_me.data)
-        return redirect(request.args.get('next') or url_for('display.index'))
+        return redirect(request.args.get('next') or url_for('display.status'))
     return render_template('auth/login.html', form=form)
 
 

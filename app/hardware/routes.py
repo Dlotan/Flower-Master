@@ -1,9 +1,10 @@
 from multiprocessing.pool import ThreadPool
+from flask import Blueprint
 from ..models import FlowerDevices, FlowerData
-from .. import db
-from . import hardware
+from ..factory import db
 from .flower_power import get_flower_data
 
+hardware = Blueprint('hardware', __name__)
 
 @hardware.route('/flower/data')
 def flowerpower_data():
